@@ -1,9 +1,7 @@
 name: Auto Scrape & Store News
 
 on:
-  schedule:
-
-  workflow_dispatch:  # Allows manual trigger
+   workflow_dispatch:  # Allows manual trigger
 
 jobs:
   scrape_news:
