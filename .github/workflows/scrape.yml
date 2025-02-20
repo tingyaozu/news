@@ -23,27 +23,19 @@ jobs:
           pip install -r requirements.txt
           pip install selenium scrapy pypyodbc pandas beautifulsoup4 langdetect langid
 
-      - name: Setup Chrome & Chromedriver
+      - name: Setup Firefox & Geckodriver
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget unzip
-          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo apt install ./google-chrome-stable_current_amd64.deb
+          sudo apt-get install -y firefox wget unzip
+          wget https://github.com/mozilla/geckodriver/releases/latest/download/geckodriver-linux64.tar.gz
+          tar -xvzf geckodriver-linux64.tar.gz
+          sudo mv geckodriver /usr/local/bin/
+          chmod +x /usr/local/bin/geckodriver
           
-          # Get installed Chrome version
-          CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d '.' -f 1,2,3)
-          
-          # Fetch matching chromedriver version
-          CHROMEDRIVER_VERSION=$(curl -sS https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION)
-          
-          # Download, extract, and move chromedriver
-          wget https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip
-          unzip chromedriver_linux64.zip
-          sudo mv chromedriver /usr/local/bin/
-          chmod +x /usr/local/bin/chromedriver
-          
-          # Check installed versions
-          google-chrome --version
+          # Verify installation
+          firefox --version
+          geckodriver --version
+
           chromedriver --version
 
 
