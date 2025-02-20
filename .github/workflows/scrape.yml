@@ -33,7 +33,7 @@ jobs:
           
           # Download the correct version
           wget https://github.com/mozilla/geckodriver/releases/download/${GECKODRIVER_VERSION}/geckodriver-linux64.tar.gz
-          
+          wget "$GECKODRIVER_URL"
           # Extract and move geckodriver to system path
           tar -xzf geckodriver-linux64.tar.gz
           sudo mv geckodriver /usr/local/bin/
