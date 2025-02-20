@@ -26,17 +26,23 @@ jobs:
       - name: Setup Firefox & Geckodriver
         run: |
           sudo apt-get update
-          sudo apt-get install -y firefox wget unzip
-          wget https://github.com/mozilla/geckodriver/releases/latest/download/geckodriver-linux64.tar.gz
-          tar -xvzf geckodriver-linux64.tar.gz
+          sudo apt-get install -y firefox wget tar
+          
+          # Get the latest available Geckodriver version
+          GECKODRIVER_VERSION=$(curl -sS https://api.github.com/repos/mozilla/geckodriver/releases/latest | grep '"tag_name":' | cut -d '"' -f 4)
+          
+          # Download the correct version
+          wget https://github.com/mozilla/geckodriver/releases/download/${GECKODRIVER_VERSION}/geckodriver-linux64.tar.gz
+          
+          # Extract and move geckodriver to system path
+          tar -xzf geckodriver-linux64.tar.gz
           sudo mv geckodriver /usr/local/bin/
           chmod +x /usr/local/bin/geckodriver
           
-          # Verify installation
+          # Check installed versions
           firefox --version
           geckodriver --version
 
-          chromedriver --version
 
 
       - name: Run News Scraper
