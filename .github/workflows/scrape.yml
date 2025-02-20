@@ -2,7 +2,7 @@ name: Auto Scrape & Store News
 
 on:
   schedule:
-    - cron: '0 */3 * * *'  # Runs every 3 hours
+
   workflow_dispatch:  # Allows manual trigger
 
 jobs:
