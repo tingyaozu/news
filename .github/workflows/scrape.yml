@@ -1,9 +1,9 @@
 name: Auto Scrape & Store News
 
 on:
-  workflow_dispatch:  # Allows manual trigger
+  workflow_dispatch:  # Manual trigger
   schedule:
-    - cron: "0 */3 * * *"  # Runs every 3 hours
+    - cron: "0 */3 * * *"  # Every 3 hours
 
 jobs:
   scrape_news:
@@ -21,7 +21,7 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt
-          pip install selenium scrapy pypyodbc pandas beautifulsoup4 langdetect langid webdriver-manager
+          pip install selenium scrapy pypyodbc pandas beautifulsoup4 langdetect langid python-dotenv
 
       - name: Install Microsoft ODBC Driver 18 for SQL Server
         run: |
