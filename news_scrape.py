@@ -16,15 +16,13 @@ import langid
 def is_english(text):
     """Detect language using both langdetect and langid for better accuracy."""
     try:
-        lang_detect = detect(text)  # langdetect method
-        lang_langid, confidence = langid.classify(text)  # langid method
-        final_decision = lang_detect == "en" or lang_langid == "en"
-        # print(f"'{text}' → LangDetect: {lang_detect}, LangID: {lang_langid} (Confidence: {confidence:.2f}) → Final Decision: {final_decision}")
-        return final_decision
+        lang_detect = detect(text)
+        lang_langid, confidence = langid.classify(text)
+        return lang_detect == "en" or lang_langid == "en"
     except Exception as e:
         print(f"Error detecting language for: {text}. Error: {e}")
         return False
-    
+
 def unstructured_news(target_date):
     """Scrapes hot news & market news from the website."""
     hot_news_list = []
@@ -77,7 +75,7 @@ def unstructured_news(target_date):
             last_date_str = last_date_element["data-date"]
             last_date = datetime.fromisoformat(last_date_str).date()
 
-            if target_date - last_date > timedelta(hours=3):  #要改
+            if target_date - last_date > timedelta(hours=3):
                 articles_list = articles.find_all('div', class_='item figure flex-block')
                 for article in articles_list:
                     news_hyperlink = 'https://www.klsescreener.com' + article.find('a')['href']
@@ -113,7 +111,6 @@ def unstructured_news(target_date):
     driver.quit()
     return hot_news_list, market_news_list
 
-
 class NewsScraper(scrapy.Spider):
     name = 'news_spider'
 
@@ -138,21 +135,24 @@ class NewsScraper(scrapy.Spider):
             if item['News Hyperlinks'] == response.url:
                 item['Related Stocks'] = ', '.join(related_stocks)
 
-
 if __name__ == "__main__":
+    # Scrape news
     hot_news, market_news = unstructured_news(date.today())
 
+    # Run Scrapy to update news items with related stocks
     process = CrawlerProcess()
     process.crawl(NewsScraper, hot_news=hot_news, market_news=market_news)
     process.start()
 
+    # Create DataFrames
     hot_news_df = pd.DataFrame(hot_news)
     market_news_df = pd.DataFrame(market_news)
     
-    #drop non english 
+    # Filter out non-English articles from market news
     market_news_df['Language'] = market_news_df['Title'].apply(is_english)
     market_news_df = market_news_df[market_news_df['Language'] == True].drop(columns=['Language'])
     
-    insert_news(market_news_df,'Market_News')
+    # Insert new news articles into the SQL table
+    insert_news(market_news_df, 'Market_News')
 
-    print("✅ News scraping complete, data saved into sql.")
+    print("✅ News scraping complete, data saved into SQL.")
