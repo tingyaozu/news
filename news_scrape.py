@@ -2,8 +2,9 @@ import pandas as pd
 from datetime import datetime, timedelta, date
 from bs4 import BeautifulSoup
 from selenium import webdriver
-from selenium.webdriver.firefox.options import Options
-from webdriver_manager.firefox import GeckoDriverManager
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -31,13 +32,15 @@ def unstructured_news(target_date):
     hot_news_list = []
     market_news_list = []
 
-    options = Options()
+    options = ChromeOptions()
     options.add_argument('--headless')
     options.add_argument('--disable-gpu')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
     
-    driver = webdriver.Firefox(executable_path=GeckoDriverManager().install(), options=options)
+    # Create a Service object for Chrome using webdriver-manager
+    service = ChromeService(executable_path=ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=options)
     driver.get("https://www.klsescreener.com/v2/news")
 
     def extract_hot_news(driver):
