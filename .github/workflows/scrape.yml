@@ -7,7 +7,7 @@ jobs:
   scrape_news:
     runs-on: ubuntu-latest
 
-    steps:
+     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
@@ -19,29 +19,7 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt
-          pip install selenium scrapy pypyodbc pandas beautifulsoup4 langdetect langid
-
-      - name: Setup Firefox & Geckodriver
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y firefox wget tar
-          
-          # Get the latest available Geckodriver version
-          GECKODRIVER_VERSION=$(curl -sS https://api.github.com/repos/mozilla/geckodriver/releases/latest | grep '"tag_name":' | cut -d '"' -f 4)
-          
-          # Download the correct version
-          wget https://github.com/mozilla/geckodriver/releases/download/${GECKODRIVER_VERSION}/geckodriver-linux64.tar.gz
-          wget "$GECKODRIVER_URL"
-          # Extract and move geckodriver to system path
-          tar -xzf geckodriver-linux64.tar.gz
-          sudo mv geckodriver /usr/local/bin/
-          chmod +x /usr/local/bin/geckodriver
-          
-          # Check installed versions
-          firefox --version
-          geckodriver --version
-
-
+          pip install selenium scrapy pypyodbc pandas beautifulsoup4 langdetect langid webdriver-manager
 
       - name: Run News Scraper
         env:
@@ -49,13 +27,12 @@ jobs:
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-        run: |
-          python news_scrape.py
+        run: python news_scrape.py
 
       - name: Commit and Push Updates
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
           git add .
-          git commit -m "Auto-update news data"
+          git commit -m "Auto-update news data" || echo "No changes to commit"
           git push || echo "No changes to commit"
