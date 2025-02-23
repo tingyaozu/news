@@ -15,10 +15,12 @@ connection_string = f'Driver={{ODBC Driver 18 for SQL Server}};Server={SERVER},1
 def read_sql(table_name):
     """Reads data from Azure SQL table into a Pandas DataFrame."""
     try:
-        # Use SQLAlchemy engine for better Pandas compatibility
-        engine = create_engine(f"mssql+pyodbc://{USERNAME}:{PASSWORD}@{SERVER}/{DATABASE}?driver=ODBC+Driver+18+for+SQL+Server")
+        engine = create_engine(
+            f"mssql+pyodbc://{USERNAME}:{PASSWORD}@{SERVER}/{DATABASE}?driver=ODBC+Driver+18+for+SQL+Server"
+        )
         query = f"SELECT * FROM {table_name}"
-        existing_df = pd.read_sql(query, engine)
+        with engine.connect() as conn:
+            existing_df = pd.read_sql(query, conn)
         return existing_df
     except Exception as e:
         print(f"❌ Error reading SQL data: {e}")
