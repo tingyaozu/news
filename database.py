@@ -22,7 +22,7 @@ def read_sql(table_name):
     try:
         conn = odbc.connect(connection_string)
         query = f"SELECT * FROM {table_name}"
-        # Use Pandas' read_sql_query with the ODBC connection
+        # Warning: pandas warns that only certain connection types are tested.
         existing_df = pd.read_sql_query(query, conn)
         conn.close()
         return existing_df
@@ -42,6 +42,10 @@ def insert_news(news_article_df, news_table):
         # Filter out duplicate Titles before inserting
         new_data = news_article_df[~news_article_df['Title'].isin(existing_titles)]
         
+        # Convert the Published Date column from string to datetime if necessary.
+        if not new_data.empty and 'Published Date' in new_data.columns:
+            new_data['Published Date'] = pd.to_datetime(new_data['Published Date'], errors='coerce')
+        
         if not new_data.empty:
             records = list(new_data.itertuples(index=False, name=None))
             
@@ -50,23 +54,27 @@ def insert_news(news_article_df, news_table):
             VALUES (?, ?, ?, ?)
             """
             
-            # Set your maximum allowed lengths for each column
+            # Set your maximum allowed lengths for each column.
+            # For datetime fields, our check will now show the type.
             max_lengths = {
                 'Title': 255, 
-                'News Hyperlinks': 255,  # Adjust if needed
-                'Published Date': 50,    # Adjust depending on your schema
-                'Related Stocks': 255     # Adjust if needed
+                'News Hyperlinks': 255,  
+                'Published Date': 50,    # This limit is only used for string debugging.
+                'Related Stocks': 255     
             }
             # Order of columns in the insert query:
             columns = ['Title', 'News Hyperlinks', 'Published Date', 'Related Stocks']
 
-            # Print out the length or type of each value before insertion
+            # Print out the length or type of each value before insertion.
             print("Checking each record before insertion:")
             for rec_num, record in enumerate(records, start=1):
                 print(f"\nRecord {rec_num}:")
                 for i, column in enumerate(columns):
                     value = record[i]
-                    if isinstance(value, str):
+                    # For datetime objects, print type and value.
+                    if column == 'Published Date':
+                        print(f" - {column}: type = {type(value).__name__}, value = {value}")
+                    elif isinstance(value, str):
                         value_length = len(value)
                         print(f" - {column}: length = {value_length}")
                         if value_length > max_lengths[column]:
@@ -76,7 +84,7 @@ def insert_news(news_article_df, news_table):
                     else:
                         print(f" - {column}: type = {type(value).__name__}, value = {value}")
 
-            # Proceed with the insert operation
+            # Proceed with the insert operation.
             conn = odbc.connect(connection_string)
             cursor = conn.cursor()
             cursor.executemany(insert_query, records)
@@ -90,3 +98,7 @@ def insert_news(news_article_df, news_table):
     
     except Exception as e:
         print(f"❌ Error inserting data: {e}")
+
+# Example usage:
+# news_df = pd.DataFrame({...})
+# insert_news(news_df, 'YourNewsTable')
