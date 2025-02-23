@@ -1,7 +1,6 @@
 import pypyodbc as odbc
 import pandas as pd
 import os
-from sqlalchemy import create_engine
 
 # Azure SQL Database Connection (Private Access)
 SERVER = os.getenv("DB_SERVER")
@@ -10,17 +9,22 @@ USERNAME = os.getenv("DB_USERNAME")
 PASSWORD = os.getenv("DB_PASSWORD")
 
 # Create connection string
-connection_string = f'Driver={{ODBC Driver 18 for SQL Server}};Server={SERVER},1433;Database={DATABASE};Uid={USERNAME};Pwd={PASSWORD};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;'
+connection_string = (
+    f"Driver={{ODBC Driver 18 for SQL Server}};"
+    f"Server={SERVER},1433;"
+    f"Database={DATABASE};"
+    f"Uid={USERNAME};Pwd={PASSWORD};"
+    f"Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;"
+)
 
 def read_sql(table_name):
-    """Reads data from Azure SQL table into a Pandas DataFrame."""
+    """Reads data from an Azure SQL table into a Pandas DataFrame using pypyodbc."""
     try:
-        engine = create_engine(
-            f"mssql+pyodbc://{USERNAME}:{PASSWORD}@{SERVER}/{DATABASE}?driver=ODBC+Driver+18+for+SQL+Server"
-        )
+        conn = odbc.connect(connection_string)
         query = f"SELECT * FROM {table_name}"
-        with engine.connect() as conn:
-            existing_df = pd.read_sql(query, conn)
+        # Use Pandas' read_sql_query with the ODBC connection
+        existing_df = pd.read_sql_query(query, conn)
+        conn.close()
         return existing_df
     except Exception as e:
         print(f"❌ Error reading SQL data: {e}")
@@ -29,7 +33,11 @@ def read_sql(table_name):
 def insert_news(news_article_df, news_table):
     """Inserts new news articles into the SQL database, avoiding duplicates."""
     try:
-        existing_titles = read_sql(news_table)['Title'].tolist()
+        existing_df = read_sql(news_table)
+        if existing_df.empty or 'Title' not in existing_df.columns:
+            existing_titles = []
+        else:
+            existing_titles = existing_df['Title'].tolist()
         
         # Filter out duplicate Titles before inserting
         new_data = news_article_df[~news_article_df['Title'].isin(existing_titles)]
@@ -42,10 +50,12 @@ def insert_news(news_article_df, news_table):
             VALUES (?, ?, ?, ?)
             """
             
-            with odbc.connect(connection_string) as conn:
-                with conn.cursor() as cursor:
-                    cursor.executemany(insert_query, records)
-                    conn.commit()
+            conn = odbc.connect(connection_string)
+            cursor = conn.cursor()
+            cursor.executemany(insert_query, records)
+            conn.commit()
+            cursor.close()
+            conn.close()
             
             print(f"✅ Inserted {len(new_data)} new rows.")
         else:
@@ -53,4 +63,3 @@ def insert_news(news_article_df, news_table):
     
     except Exception as e:
         print(f"❌ Error inserting data: {e}")
-
