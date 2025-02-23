@@ -46,10 +46,19 @@ def insert_news(news_article_df, news_table):
         # then convert pandas Timestamp to native Python datetime.
         if not new_data.empty and 'Published Date' in new_data.columns:
             new_data['Published Date'] = pd.to_datetime(new_data['Published Date'], errors='coerce')
-            new_data['Published Date'] = new_data['Published Date'].apply(lambda x: x.to_pydatetime() if pd.notnull(x) else None)
+            new_data['Published Date'] = new_data['Published Date'].apply(
+                lambda x: x.to_pydatetime() if pd.notnull(x) else None
+            )
         
         if not new_data.empty:
-            records = list(new_data.itertuples(index=False, name=None))
+            # Convert each row so that any pd.Timestamp is converted to datetime.datetime
+            records = []
+            for row in new_data.itertuples(index=False, name=None):
+                converted_row = tuple(
+                    x.to_pydatetime() if isinstance(x, pd.Timestamp) else x
+                    for x in row
+                )
+                records.append(converted_row)
             
             insert_query = f"""
             INSERT INTO {news_table} ([Title], [News Hyperlinks], [Published Date], [Related Stocks])
@@ -57,11 +66,10 @@ def insert_news(news_article_df, news_table):
             """
             
             # Set your maximum allowed lengths for each column.
-            # For datetime fields, our check will now show the type.
             max_lengths = {
                 'Title': 255, 
                 'News Hyperlinks': 255,  
-                'Published Date': 50,    # This limit is only used for string debugging.
+                'Published Date': 50,    # Only for debugging
                 'Related Stocks': 255     
             }
             # Order of columns in the insert query:
@@ -73,7 +81,6 @@ def insert_news(news_article_df, news_table):
                 print(f"\nRecord {rec_num}:")
                 for i, column in enumerate(columns):
                     value = record[i]
-                    # For datetime objects, print type and value.
                     if column == 'Published Date':
                         print(f" - {column}: type = {type(value).__name__}, value = {value}")
                     elif isinstance(value, str):
