@@ -47,7 +47,6 @@ def insert_news(news_article_df, news_table):
             new_data['Published Date'] = new_data['Published Date'].astype(str)
         
         if not new_data.empty:
-            # No need to convert pd.Timestamp to datetime, since we're keeping it as string.
             records = list(new_data.itertuples(index=False, name=None))
             
             insert_query = f"""
@@ -55,7 +54,7 @@ def insert_news(news_article_df, news_table):
             VALUES (?, ?, ?, ?)
             """
             
-            # Set your maximum allowed lengths for each column.
+            # Maximum allowed lengths (used for debugging purposes)
             max_lengths = {
                 'Title': 255, 
                 'News Hyperlinks': 255,  
@@ -65,24 +64,28 @@ def insert_news(news_article_df, news_table):
             # Order of columns in the insert query:
             columns = ['Title', 'News Hyperlinks', 'Published Date', 'Related Stocks']
 
-            # Print out the length or type of each value before insertion.
+            # Print out the length and byte length of each value before insertion.
             print("Checking each record before insertion:")
             for rec_num, record in enumerate(records, start=1):
                 print(f"\nRecord {rec_num}:")
                 for i, column in enumerate(columns):
                     value = record[i]
-                    if column == 'Published Date':
-                        print(f" - {column}: type = {type(value).__name__}, value = {value}")
-                    elif isinstance(value, str):
-                        value_length = len(value)
-                        print(f" - {column}: length = {value_length}")
-                        if value_length > max_lengths[column]:
-                            print(f"   ⚠️  Value in '{column}' exceeds max length: {value_length} > {max_lengths[column]}")
+                    # For non-string types, convert to string first for byte calculations.
+                    if isinstance(value, str):
+                        char_length = len(value)
+                        byte_length = len(value.encode('utf-8'))
+                        print(f" - {column}: char length = {char_length}, byte length = {byte_length}")
+                        if char_length > max_lengths[column]:
+                            print(f"   ⚠️  Value in '{column}' exceeds max length: {char_length} > {max_lengths[column]}")
                     elif value is None:
                         print(f" - {column}: None")
                     else:
-                        print(f" - {column}: type = {type(value).__name__}, value = {value}")
-
+                        # Convert non-string values to string for byte calculation
+                        value_str = str(value)
+                        char_length = len(value_str)
+                        byte_length = len(value_str.encode('utf-8'))
+                        print(f" - {column}: type = {type(value).__name__}, char length = {char_length}, byte length = {byte_length}")
+            
             # Proceed with the insert operation.
             conn = odbc.connect(connection_string)
             cursor = conn.cursor()
