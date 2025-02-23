@@ -50,6 +50,33 @@ def insert_news(news_article_df, news_table):
             VALUES (?, ?, ?, ?)
             """
             
+            # Set your maximum allowed lengths for each column
+            max_lengths = {
+                'Title': 255, 
+                'News Hyperlinks': 255,  # Adjust if needed
+                'Published Date': 50,    # Adjust depending on your schema
+                'Related Stocks': 255     # Adjust if needed
+            }
+            # Order of columns in the insert query:
+            columns = ['Title', 'News Hyperlinks', 'Published Date', 'Related Stocks']
+
+            # Print out the length or type of each value before insertion
+            print("Checking each record before insertion:")
+            for rec_num, record in enumerate(records, start=1):
+                print(f"\nRecord {rec_num}:")
+                for i, column in enumerate(columns):
+                    value = record[i]
+                    if isinstance(value, str):
+                        value_length = len(value)
+                        print(f" - {column}: length = {value_length}")
+                        if value_length > max_lengths[column]:
+                            print(f"   ⚠️  Value in '{column}' exceeds max length: {value_length} > {max_lengths[column]}")
+                    elif value is None:
+                        print(f" - {column}: None")
+                    else:
+                        print(f" - {column}: type = {type(value).__name__}, value = {value}")
+
+            # Proceed with the insert operation
             conn = odbc.connect(connection_string)
             cursor = conn.cursor()
             cursor.executemany(insert_query, records)
@@ -57,7 +84,7 @@ def insert_news(news_article_df, news_table):
             cursor.close()
             conn.close()
             
-            print(f"✅ Inserted {len(new_data)} new rows.")
+            print(f"\n✅ Inserted {len(new_data)} new rows.")
         else:
             print("⚠️ No new data to insert.")
     
