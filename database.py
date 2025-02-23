@@ -42,23 +42,13 @@ def insert_news(news_article_df, news_table):
         # Filter out duplicate Titles before inserting
         new_data = news_article_df[~news_article_df['Title'].isin(existing_titles)]
         
-        # Convert the Published Date column from string to datetime if necessary,
-        # then convert pandas Timestamp to native Python datetime.
+        # Convert the Published Date column to string.
         if not new_data.empty and 'Published Date' in new_data.columns:
-            new_data['Published Date'] = pd.to_datetime(new_data['Published Date'], errors='coerce')
-            new_data['Published Date'] = new_data['Published Date'].apply(
-                lambda x: x.to_pydatetime() if pd.notnull(x) else None
-            )
+            new_data['Published Date'] = new_data['Published Date'].astype(str)
         
         if not new_data.empty:
-            # Convert each row so that any pd.Timestamp is converted to datetime.datetime
-            records = []
-            for row in new_data.itertuples(index=False, name=None):
-                converted_row = tuple(
-                    x.to_pydatetime() if isinstance(x, pd.Timestamp) else x
-                    for x in row
-                )
-                records.append(converted_row)
+            # No need to convert pd.Timestamp to datetime, since we're keeping it as string.
+            records = list(new_data.itertuples(index=False, name=None))
             
             insert_query = f"""
             INSERT INTO {news_table} ([Title], [News Hyperlinks], [Published Date], [Related Stocks])
