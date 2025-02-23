@@ -4,10 +4,10 @@ import os
 import re
 from dotenv import load_dotenv
 
-# Load environment variables from the .env file
+# Load environment variables locally (this will have no effect on GitHub Actions if env vars are provided via workflow)
 load_dotenv()
 
-# Azure SQL Database Connection (Private Access)
+# Build the connection string from environment variables
 connection_string = (
     f"Driver={{ODBC Driver 18 for SQL Server}};"
     f"Server={os.getenv('DB_SERVER')},1433;"
@@ -15,7 +15,6 @@ connection_string = (
     f"Uid={os.getenv('DB_USERNAME')};Pwd={os.getenv('DB_PASSWORD')};"
     f"Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;"
 )
-
 
 def normalize_title(title):
     """Normalize a title by stripping, converting to lowercase, and removing punctuation."""
@@ -38,15 +37,14 @@ def read_sql(table_name):
 def insert_news(news_article_df, news_table):
     """
     Inserts new news articles into the SQL database.
-    
-    The function normalizes the 'Title' column in both the new DataFrame and the existing SQL data.
-    It then drops duplicates from the new data and inserts only rows with titles that do not exist
+
+    Normalizes the 'Title' column in both the new DataFrame and the existing SQL data.
+    Drops duplicates from the new data and inserts only rows with titles that do not exist
     in the SQL table.
     """
-    # Normalize new data's Title column
+    # Normalize new data's Title column and drop duplicates within the new data
     news_article_df['Title'] = news_article_df['Title'].astype(str)
     news_article_df['NormalizedTitle'] = news_article_df['Title'].apply(normalize_title)
-    # Drop duplicate titles within the new data
     news_article_df = news_article_df.drop_duplicates(subset=['NormalizedTitle'], keep='first')
     
     try:
@@ -58,7 +56,7 @@ def insert_news(news_article_df, news_table):
         else:
             normalized_existing = []
         
-        # Filter new rows: only keep those whose normalized title is not in the existing data
+        # Filter new rows: keep only those whose normalized title is not in the existing data
         new_data = news_article_df[~news_article_df['NormalizedTitle'].isin(normalized_existing)]
         
         print("New data after filtering duplicates:")
@@ -80,7 +78,7 @@ def insert_news(news_article_df, news_table):
             VALUES (?, ?, ?, ?)
         """
         
-        # Optional debugging: check character and byte lengths
+        # Optional debugging: check character and byte lengths for each record
         max_lengths = {
             'Title': 255, 
             'News Hyperlinks': 255,  
@@ -119,7 +117,3 @@ def insert_news(news_article_df, news_table):
     
     except Exception as e:
         print(f"❌ Error inserting data: {e}")
-
-# Example usage:
-# news_df = pd.DataFrame({...})
-# insert_news(news_df, 'YourNewsTable')
