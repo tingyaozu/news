@@ -1,13 +1,15 @@
 name: Auto Scrape & Store News
 
 on:
-   workflow_dispatch:  # Allows manual trigger
+  workflow_dispatch:  # Allows manual trigger
+  schedule:
+    - cron: "0 */3 * * *"  # Runs every 3 hours
 
 jobs:
   scrape_news:
     runs-on: ubuntu-latest
 
-     steps:
+    steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
